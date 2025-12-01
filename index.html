@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>日常チェック記録</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+        sans-serif;
+      margin: 1.5rem;
+      background: #f5f5f5;
+    }
+
+    h1 {
+      font-size: 1.4rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .card {
+      background: #ffffff;
+      padding: 1rem 1.2rem;
+      border-radius: 0.6rem;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+      margin-bottom: 1rem;
+    }
+
+    .checks {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      margin: 0.5rem 0 1rem;
+    }
+
+    label {
+      cursor: pointer;
+    }
+
+    .actions {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    button {
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 999px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      background: #007bff;
+      color: #ffffff;
+    }
+
+    button.secondary {
+      background: #e0e0e0;
+      color: #333333;
+    }
+
+    button:active {
+      transform: translateY(1px);
+    }
+
+    #message {
+      font-size: 0.8rem;
+      color: #008000;
+      min-height: 1em;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+
+    th,
+    td {
+      border: 1px solid #dddddd;
+      padding: 0.4rem 0.5rem;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    th {
+      background: #fafafa;
+    }
+
+    tbody tr:nth-child(even) {
+      background: #fafafa;
+    }
+
+    .empty {
+      text-align: center;
+      color: #888888;
+      font-size: 0.85rem;
+      padding: 0.6rem 0;
+    }
+
+    @media (max-width: 600px) {
+      body {
+        margin: 0.8rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>日常チェック記録</h1>
+
+  <div class="card">
+    <p>寝る前や外出時のチェック内容を記録します。</p>
+    <div class="checks">
+      <label>
+        <input type="checkbox" id="keyLocked" />
+        鍵の施錠
+      </label>
+      <label>
+        <input type="checkbox" id="windowLocked" />
+        窓の施錠
+      </label>
+      <label>
+        <input type="checkbox" id="lightsOff" />
+        部屋の消灯
+      </label>
+    </div>
+    <div class="actions">
+      <button id="saveBtn">この状態を記録する</button>
+      <button id="clearBtn" class="secondary">チェックをリセット</button>
+      <span id="message"></span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2 style="font-size:1.1rem; margin-top:0;">履歴</h2>
+    <p style="font-size:0.8rem; color:#666;">最新の記録が上に表示されます。</p>
+    <table>
+      <thead>
+        <tr>
+          <th>記録日時</th>
+          <th>鍵の施錠</th>
+          <th>窓の施錠</th>
+          <th>部屋の消灯</th>
+        </tr>
+      </thead>
+      <tbody id="logBody">
+        <!-- ここに履歴が入ります -->
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+    (function () {
+      const STORAGE_KEY = "dailyCheckLog";
+
+      const keyLockedEl = document.getElementById("keyLocked");
+      const windowLockedEl = document.getElementById("windowLocked");
+      const lightsOffEl = document.getElementById("lightsOff");
+      const saveBtn = document.getElementById("saveBtn");
+      const clearBtn = document.getElementById("clearBtn");
+      const logBody = document.getElementById("logBody");
+      const messageEl = document.getElementById("message");
+
+      function loadLog() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          return raw ? JSON.parse(raw) : [];
+        } catch (e) {
+          console.error(e);
+          return [];
+        }
+      }
+
+      function saveLog(log) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(log));
+      }
+
+      function boolToMark(value) {
+        return value ? "○" : "―";
+      }
+
+      function renderLog() {
+        const log = loadLog();
+        logBody.innerHTML = "";
+        if (!log.length) {
+          const tr = document.createElement("tr");
+          const td = document.createElement("td");
+          td.colSpan = 4;
+          td.textContent = "まだ記録はありません。";
+          td.className = "empty";
+          tr.appendChild(td);
+          logBody.appendChild(tr);
+          return;
+        }
+
+        log.forEach((entry) => {
+          const tr = document.createElement("tr");
+
+          const tdTime = document.createElement("td");
+          tdTime.textContent = entry.displayTime;
+          tr.appendChild(tdTime);
+
+          const tdKey = document.createElement("td");
+          tdKey.textContent = boolToMark(entry.keyLocked);
+          tr.appendChild(tdKey);
+
+          const tdWindow = document.createElement("td");
+          tdWindow.textContent = boolToMark(entry.windowLocked);
+          tr.appendChild(tdWindow);
+
+          const tdLights = document.createElement("td");
+          tdLights.textContent = boolToMark(entry.lightsOff);
+          tr.appendChild(tdLights);
+
+          logBody.appendChild(tr);
+        });
+      }
+
+      function setMessage(text) {
+        messageEl.textContent = text;
+        if (text) {
+          setTimeout(() => {
+            messageEl.textContent = "";
+          }, 2500);
+        }
+      }
+
+      saveBtn.addEventListener("click", () => {
+        const entry = {
+          time: new Date().toISOString(),
+          displayTime: new Date().toLocaleString("ja-JP"),
+          keyLocked: keyLockedEl.checked,
+          windowLocked: windowLockedEl.checked,
+          lightsOff: lightsOffEl.checked,
+        };
+
+        const log = loadLog();
+        log.unshift(entry); // 新しいものを先頭に
+        saveLog(log);
+        renderLog();
+        setMessage("記録しました。");
+      });
+
+      clearBtn.addEventListener("click", () => {
+        keyLockedEl.checked = false;
+        windowLockedEl.checked = false;
+        lightsOffEl.checked = false;
+        setMessage("チェックをリセットしました。");
+      });
+
+      // 初期表示
+      renderLog();
+    })();
+  </script>
+</body>
+</html>

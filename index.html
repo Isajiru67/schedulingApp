@@ -41,7 +41,7 @@
     const SUPABASE_URL = "https://zbdbojbvbcluucvjjmzj.supabase.co";
     const SUPABASE_ANON_KEY = "sb_publishable_pMUjvFFJU0vJLagADb3QYQ_UqYf_Bw_";
 
-    const supabase = supabaseJs.createClient(
+    const supabaseClient = supabaseJs.createClient(
       SUPABASE_URL,
       SUPABASE_ANON_KEY
     );
@@ -59,7 +59,7 @@
       const endAt = document.getElementById("endAt").value;
       const note = document.getElementById("note").value;
 
-      const { error } = await supabase
+      const { error } = await supabaseClient
         .from("events")
         .insert({
           title: title,
